@@ -1,4 +1,5 @@
 import c from "classnames";
+import { useEffect, useRef, useState } from "react";
 import spellsByClass from "src/data/spells-by-class.json";
 import spells from "src/data/spells.json";
 import { Spell } from "./spell";
@@ -37,6 +38,74 @@ export function SpellDiagram({
   const isSpellDetailed = (spell: SpellType) =>
     selectedClass && highlightedSpells.has(spell.id);
 
+  // Referencias a todos los hechizos que están en detalle
+  const spellRefs = useRef<HTMLElement[]>([]);
+  const [focusedSpellIndex, setFocusedSpellIndex] = useState<number>(-1);
+
+  // Obtener lista plana de hechizos detallados para navegación
+  const detailedSpells = selectedClass 
+    ? (spells as SpellType[]).filter(spell => isSpellDetailed(spell))
+    : [];
+
+  // Limpiar referencias cuando cambia la clase seleccionada
+  useEffect(() => {
+    spellRefs.current = [];
+    setFocusedSpellIndex(-1);
+  }, [selectedClass]);
+
+  // Auto-focus al primer hechizo cuando se selecciona una clase
+  useEffect(() => {
+    if (selectedClass && detailedSpells.length > 0 && focusedSpellIndex === -1) {
+      setFocusedSpellIndex(0);
+      setTimeout(() => {
+        spellRefs.current[0]?.focus();
+      }, 100);
+    }
+  }, [selectedClass, detailedSpells.length, focusedSpellIndex]);
+
+  const onKeyDown = (event: React.KeyboardEvent) => {
+    if (!selectedClass || detailedSpells.length === 0) {
+      return;
+    }
+
+    const { key } = event;
+    
+    if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Tab"].includes(key)) {
+      return;
+    }
+
+    event.preventDefault();
+
+    let newIndex = focusedSpellIndex;
+
+    switch (key) {
+      case "ArrowRight":
+      case "Tab":
+        if (!event.shiftKey) {
+          newIndex = (focusedSpellIndex + 1) % detailedSpells.length;
+        } else if (key === "Tab") {
+          newIndex = focusedSpellIndex - 1 < 0 ? detailedSpells.length - 1 : focusedSpellIndex - 1;
+        }
+        break;
+      case "ArrowLeft":
+        newIndex = focusedSpellIndex - 1 < 0 ? detailedSpells.length - 1 : focusedSpellIndex - 1;
+        break;
+      case "ArrowDown":
+        // Navegar a la siguiente fila (aproximadamente +6 hechizos por fila, pero varía)
+        newIndex = Math.min(detailedSpells.length - 1, focusedSpellIndex + 6);
+        break;
+      case "ArrowUp":
+        // Navegar a la fila anterior (aproximadamente -6 hechizos por fila, pero varía)
+        newIndex = Math.max(0, focusedSpellIndex - 6);
+        break;
+    }
+
+    if (newIndex !== focusedSpellIndex) {
+      setFocusedSpellIndex(newIndex);
+      spellRefs.current[newIndex]?.focus();
+    }
+  };
+
   return (
     <div
       className={c(
@@ -45,6 +114,8 @@ export function SpellDiagram({
         status === "selected" && styles.selected,
         status === "highlighted" && styles.highlighted
       )}
+      onKeyDown={onKeyDown}
+      tabIndex={selectedClass ? 0 : -1}
     >
       {Array.from({ length: 7 }, (_, level) => {
         const { firstHalf, secondHalf } = twoRows(spellsByLevel[level]);
@@ -52,24 +123,44 @@ export function SpellDiagram({
         return (
           <div key={level} className={styles.levelGroup} data-level={level}>
             <div className={styles.row}>
-              {firstHalf.map((spell, idx) => (
-                <Spell
-                  key={`${level}-1-${idx}`}
-                  spell={spell}
-                  highlighted={isSpellHighlighted(spell)}
-                  detailed={isSpellDetailed(spell)}
-                />
-              ))}
+              {firstHalf.map((spell, idx) => {
+                const isDetailed = isSpellDetailed(spell);
+                const spellIndex = isDetailed ? detailedSpells.findIndex(s => s.id === spell.id) : -1;
+                
+                return (
+                  <Spell
+                    key={`${level}-1-${idx}`}
+                    ref={(el) => {
+                      if (el && spellIndex >= 0) {
+                        spellRefs.current[spellIndex] = el;
+                      }
+                    }}
+                    spell={spell}
+                    highlighted={isSpellHighlighted(spell)}
+                    detailed={isDetailed}
+                  />
+                );
+              })}
             </div>
             <div className={styles.row}>
-              {secondHalf.map((spell, idx) => (
-                <Spell
-                  key={`${level}-2-${idx}`}
-                  spell={spell}
-                  highlighted={isSpellHighlighted(spell)}
-                  detailed={isSpellDetailed(spell)}
-                />
-              ))}
+              {secondHalf.map((spell, idx) => {
+                const isDetailed = isSpellDetailed(spell);
+                const spellIndex = isDetailed ? detailedSpells.findIndex(s => s.id === spell.id) : -1;
+                
+                return (
+                  <Spell
+                    key={`${level}-2-${idx}`}
+                    ref={(el) => {
+                      if (el && spellIndex >= 0) {
+                        spellRefs.current[spellIndex] = el;
+                      }
+                    }}
+                    spell={spell}
+                    highlighted={isSpellHighlighted(spell)}
+                    detailed={isDetailed}
+                  />
+                );
+              })}
             </div>
           </div>
         );

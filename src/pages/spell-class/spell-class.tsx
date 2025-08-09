@@ -25,9 +25,7 @@ export function SpellClass() {
   const background = "classGrid";
 
   const onKeyDown = (event: React.KeyboardEvent) => {
-    if (
-      (event.key === "Escape" || event.key === "Backspace")
-    ) {
+    if (event.key === "Escape" || event.key === "Backspace") {
       event.preventDefault();
       navigate("/");
       return;
@@ -41,7 +39,7 @@ export function SpellClass() {
   };
 
   return (
-    <main className={styles.main} onKeyDown={onKeyDown}>
+    <main className={styles.main} onKeyDown={onKeyDown} tabIndex={-1}>
       <SpellDiagram
         highlightedClass={highlightedClass}
         selectedClass={selectedClass}
