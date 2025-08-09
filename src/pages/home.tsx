@@ -4,9 +4,9 @@ import { SpellDiagram } from "src/components/spell-diagram";
 
 import type { ClassId } from "src/models/character-class";
 
-import styles from "./app.module.css";
+import styles from "./home.module.css";
 
-export function App() {
+export function Home() {
   const [selectedClass, setSelectedClass] = useState<ClassId>();
   const [highlightedClass, setHighlightedClass] = useState<ClassId>();
   const background = selectedClass ? "classGrid" : "spellDiagram";
