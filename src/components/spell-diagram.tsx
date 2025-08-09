@@ -1,13 +1,16 @@
 import c from "classnames";
-import spellsByClass from "src/data/spells-by-class.json";
-import spells from "src/data/spells.json";
-import { useSpellNavigation } from "src/hooks";
+
 import { Spell } from "./spell";
 
-import type { ClassId, SellsByClass } from "src/models/character-class";
+import { useSpellNavigation } from "src/hooks/use-spell-navigation";
+
 import type { SpellId } from "src/models/spell";
 import type { Spell as SpellType } from "src/models/spell";
+import type { ClassId, SellsByClass } from "src/models/character-class";
+
+import spells from "src/data/spells.json";
 import styles from "./spell-diagram.module.css";
+import spellsByClass from "src/data/spells-by-class.json";
 
 type Props = {
   selectedClass: ClassId | undefined;
