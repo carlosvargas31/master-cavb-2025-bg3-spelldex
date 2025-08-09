@@ -41,12 +41,10 @@ export function SpellDiagram({
   const isSpellDetailed = (spell: SpellType) =>
     selectedClass && highlightedSpells.has(spell.id);
 
-  // Obtener lista plana de hechizos detallados para navegación
   const detailedSpells = selectedClass 
     ? (spells as SpellType[]).filter(spell => isSpellDetailed(spell))
     : [];
 
-  // Usar el hook personalizado para la navegación
   const { onKeyDown, setSpellRef } = useSpellNavigation({
     selectedClass,
     detailedSpells,
