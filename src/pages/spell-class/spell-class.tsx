@@ -5,7 +5,7 @@ import { SpellDiagram } from "src/components/spell-diagram";
 
 import type { ClassId } from "src/models/character-class";
 
-import styles from "./home.module.css";
+import styles from "src/pages/global.module.css";
 
 export function SpellClass() {
   const { classId } = useParams<{ classId: string }>();
