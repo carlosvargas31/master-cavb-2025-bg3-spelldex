@@ -10,9 +10,20 @@
   box-shadow: 0 0 2px rgba(255, 255, 255, 0.1);
   --box-shadow-highlight: 0 0 5px var(--accent, var(--gold-accent)),
     0 0 10px rgba(255, 255, 255, 0.3);
+  --box-shadow-hover: 0 0 8px var(--accent, var(--gold-accent)),
+    0 0 16px rgba(255, 255, 255, 0.5),
+    0 0 24px var(--accent, var(--gold-accent));
+  
+  transition: all 0.2s ease-in-out;
 
   &.highlighted {
     box-shadow: var(--box-shadow-highlight);
+  }
+
+  &.hovered {
+    box-shadow: var(--box-shadow-hover);
+    opacity: 1;
+    transform: scale(2);
   }
 
   &.highlighted,

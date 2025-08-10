@@ -12,9 +12,12 @@ export const Spell = forwardRef<
     spell: SpellType;
     highlighted: boolean | undefined;
     detailed: boolean | undefined;
+    hovered?: boolean;
     onTooltipClick?: (spell: SpellType, position: { x: number; y: number }) => void;
+    onMouseEnter?: () => void;
+    onMouseLeave?: () => void;
   }
->(function Spell({ spell, highlighted, detailed, onTooltipClick }, ref) {
+>(function Spell({ spell, highlighted, detailed, hovered, onTooltipClick, onMouseEnter, onMouseLeave }, ref) {
   const [selected, setSelected] = useState(false);
 
   const [showImage, setShowImage] = useState(false);
@@ -92,12 +95,15 @@ export const Spell = forwardRef<
         highlighted && !detailed && styles.highlighted,
         detailed && styles.detailed,
         detailed && selected && styles.selected,
+        hovered && styles.hovered,
       )}
       data-spell-id={spell.id}
       style={animatedSpellStyles}
       aria-label={spell.name}
       aria-detailed={detailed ? "true" : "false"}
       tabIndex={detailed ? 0 : -1}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
       {...(detailed ? { onClick, onKeyDown } : {})}
     >
       {detailed && showImage && (

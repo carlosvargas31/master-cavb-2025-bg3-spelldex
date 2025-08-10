@@ -30,6 +30,8 @@ export function SpellDiagram({
     position: { x: number; y: number };
   } | null>(null);
   
+  const [hoveredSpell, setHoveredSpell] = useState<SpellId | null>(null);
+  
   const spellsByLevel = groupSpellsByLevel(spells as SpellType[]);
   const status = selectedClass
     ? "selected"
@@ -52,7 +54,7 @@ export function SpellDiagram({
     ? (spells as SpellType[]).filter(spell => isSpellDetailed(spell))
     : [];
 
-  const { onKeyDown, setSpellRef } = useSpellNavigation({
+  const { onKeyDown, setSpellRef, focusedSpellIndex } = useSpellNavigation({
     selectedClass,
     detailedSpells,
   });
@@ -63,6 +65,14 @@ export function SpellDiagram({
 
   const handleTooltipClose = () => {
     setTooltipData(null);
+  };
+
+  const handleSpellMouseEnter = (spellId: SpellId) => {
+    setHoveredSpell(spellId);
+  };
+
+  const handleSpellMouseLeave = () => {
+    setHoveredSpell(null);
   };
 
   return (
@@ -85,6 +95,7 @@ export function SpellDiagram({
               {firstHalf.map((spell, idx) => {
                 const isDetailed = isSpellDetailed(spell);
                 const spellIndex = isDetailed ? detailedSpells.findIndex(s => s.id === spell.id) : -1;
+                const isHovered = hoveredSpell === spell.id || (focusedSpellIndex === spellIndex && spellIndex >= 0);
                 
                 return (
                   <Spell
@@ -93,7 +104,10 @@ export function SpellDiagram({
                     spell={spell}
                     highlighted={isSpellHighlighted(spell)}
                     detailed={isDetailed}
+                    hovered={isHovered}
                     onTooltipClick={isDetailed ? handleTooltipClick : undefined}
+                    onMouseEnter={() => handleSpellMouseEnter(spell.id)}
+                    onMouseLeave={handleSpellMouseLeave}
                   />
                 );
               })}
@@ -102,6 +116,7 @@ export function SpellDiagram({
               {secondHalf.map((spell, idx) => {
                 const isDetailed = isSpellDetailed(spell);
                 const spellIndex = isDetailed ? detailedSpells.findIndex(s => s.id === spell.id) : -1;
+                const isHovered = hoveredSpell === spell.id || (focusedSpellIndex === spellIndex && spellIndex >= 0);
                 
                 return (
                   <Spell
@@ -110,7 +125,10 @@ export function SpellDiagram({
                     spell={spell}
                     highlighted={isSpellHighlighted(spell)}
                     detailed={isDetailed}
+                    hovered={isHovered}
                     onTooltipClick={isDetailed ? handleTooltipClick : undefined}
+                    onMouseEnter={() => handleSpellMouseEnter(spell.id)}
+                    onMouseLeave={handleSpellMouseLeave}
                   />
                 );
               })}
