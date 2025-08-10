@@ -12,8 +12,12 @@ export const Spell = forwardRef<
     spell: SpellType;
     highlighted: boolean | undefined;
     detailed: boolean | undefined;
+    hovered?: boolean;
+    onTooltipClick?: (spell: SpellType, position: { x: number; y: number }) => void;
+    onMouseEnter?: () => void;
+    onMouseLeave?: () => void;
   }
->(function Spell({ spell, highlighted, detailed }, ref) {
+>(function Spell({ spell, highlighted, detailed, hovered, onTooltipClick, onMouseEnter, onMouseLeave }, ref) {
   const [selected, setSelected] = useState(false);
 
   const [showImage, setShowImage] = useState(false);
@@ -46,11 +50,21 @@ export const Spell = forwardRef<
     [detailed, randomDuration, randomDelay]
   );
 
-  const onClick = () => {
+  const onClick = (event: React.MouseEvent) => {
     if (!detailed) {
       return;
     }
-    setSelected(!selected);
+    
+    if (onTooltipClick) {
+      const rect = event.currentTarget.getBoundingClientRect();
+      const position = {
+        x: Math.min(rect.left + rect.width / 2, window.innerWidth - 160), // Prevent overflow
+        y: rect.top + rect.height + 8, // 8px offset below the spell
+      };
+      onTooltipClick(spell, position);
+    } else {
+      setSelected(!selected);
+    }
   };
 
   const onKeyDown = (event: React.KeyboardEvent) => {
@@ -59,7 +73,17 @@ export const Spell = forwardRef<
     }
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      setSelected(!selected);
+      
+      if (onTooltipClick) {
+        const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+        const position = {
+          x: Math.min(rect.left + rect.width / 2, window.innerWidth - 160), // Prevent overflow
+          y: rect.top + rect.height + 8, // 8px offset below the spell
+        };
+        onTooltipClick(spell, position);
+      } else {
+        setSelected(!selected);
+      }
     }
   };
 
@@ -71,12 +95,15 @@ export const Spell = forwardRef<
         highlighted && !detailed && styles.highlighted,
         detailed && styles.detailed,
         detailed && selected && styles.selected,
+        hovered && styles.hovered,
       )}
       data-spell-id={spell.id}
       style={animatedSpellStyles}
       aria-label={spell.name}
       aria-detailed={detailed ? "true" : "false"}
       tabIndex={detailed ? 0 : -1}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
       {...(detailed ? { onClick, onKeyDown } : {})}
     >
       {detailed && showImage && (

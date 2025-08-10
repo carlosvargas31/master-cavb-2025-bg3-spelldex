@@ -1,13 +1,18 @@
 import c from "classnames";
-import { useEffect, useRef, useState } from "react";
-import spellsByClass from "src/data/spells-by-class.json";
-import spells from "src/data/spells.json";
-import { Spell } from "./spell";
+import { useState } from "react";
 
-import type { ClassId, SellsByClass } from "src/models/character-class";
+import { Spell } from "./spell";
+import { SpellTooltip } from "./spell-tooltip";
+
+import { useSpellNavigation } from "src/hooks/use-spell-navigation";
+
 import type { SpellId } from "src/models/spell";
 import type { Spell as SpellType } from "src/models/spell";
+import type { ClassId, SellsByClass } from "src/models/character-class";
+
+import spells from "src/data/spells.json";
 import styles from "./spell-diagram.module.css";
+import spellsByClass from "src/data/spells-by-class.json";
 
 type Props = {
   selectedClass: ClassId | undefined;
@@ -20,6 +25,13 @@ export function SpellDiagram({
   selectedClass,
   background,
 }: Props) {
+  const [tooltipData, setTooltipData] = useState<{
+    spell: SpellType;
+    position: { x: number; y: number };
+  } | null>(null);
+  
+  const [hoveredSpell, setHoveredSpell] = useState<SpellId | null>(null);
+  
   const spellsByLevel = groupSpellsByLevel(spells as SpellType[]);
   const status = selectedClass
     ? "selected"
@@ -38,72 +50,29 @@ export function SpellDiagram({
   const isSpellDetailed = (spell: SpellType) =>
     selectedClass && highlightedSpells.has(spell.id);
 
-  // Referencias a todos los hechizos que están en detalle
-  const spellRefs = useRef<HTMLElement[]>([]);
-  const [focusedSpellIndex, setFocusedSpellIndex] = useState<number>(-1);
-
-  // Obtener lista plana de hechizos detallados para navegación
   const detailedSpells = selectedClass 
     ? (spells as SpellType[]).filter(spell => isSpellDetailed(spell))
     : [];
 
-  // Limpiar referencias cuando cambia la clase seleccionada
-  useEffect(() => {
-    spellRefs.current = [];
-    setFocusedSpellIndex(-1);
-  }, [selectedClass]);
+  const { onKeyDown, setSpellRef, focusedSpellIndex } = useSpellNavigation({
+    selectedClass,
+    detailedSpells,
+  });
 
-  // Auto-focus al primer hechizo cuando se selecciona una clase
-  useEffect(() => {
-    if (selectedClass && detailedSpells.length > 0 && focusedSpellIndex === -1) {
-      setFocusedSpellIndex(0);
-      setTimeout(() => {
-        spellRefs.current[0]?.focus();
-      }, 100);
-    }
-  }, [selectedClass, detailedSpells.length, focusedSpellIndex]);
+  const handleTooltipClick = (spell: SpellType, position: { x: number; y: number }) => {
+    setTooltipData({ spell, position });
+  };
 
-  const onKeyDown = (event: React.KeyboardEvent) => {
-    if (!selectedClass || detailedSpells.length === 0) {
-      return;
-    }
+  const handleTooltipClose = () => {
+    setTooltipData(null);
+  };
 
-    const { key } = event;
-    
-    if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Tab"].includes(key)) {
-      return;
-    }
+  const handleSpellMouseEnter = (spellId: SpellId) => {
+    setHoveredSpell(spellId);
+  };
 
-    event.preventDefault();
-
-    let newIndex = focusedSpellIndex;
-
-    switch (key) {
-      case "ArrowRight":
-      case "Tab":
-        if (!event.shiftKey) {
-          newIndex = (focusedSpellIndex + 1) % detailedSpells.length;
-        } else if (key === "Tab") {
-          newIndex = focusedSpellIndex - 1 < 0 ? detailedSpells.length - 1 : focusedSpellIndex - 1;
-        }
-        break;
-      case "ArrowLeft":
-        newIndex = focusedSpellIndex - 1 < 0 ? detailedSpells.length - 1 : focusedSpellIndex - 1;
-        break;
-      case "ArrowDown":
-        // Navegar a la siguiente fila (aproximadamente +6 hechizos por fila, pero varía)
-        newIndex = Math.min(detailedSpells.length - 1, focusedSpellIndex + 6);
-        break;
-      case "ArrowUp":
-        // Navegar a la fila anterior (aproximadamente -6 hechizos por fila, pero varía)
-        newIndex = Math.max(0, focusedSpellIndex - 6);
-        break;
-    }
-
-    if (newIndex !== focusedSpellIndex) {
-      setFocusedSpellIndex(newIndex);
-      spellRefs.current[newIndex]?.focus();
-    }
+  const handleSpellMouseLeave = () => {
+    setHoveredSpell(null);
   };
 
   return (
@@ -126,18 +95,19 @@ export function SpellDiagram({
               {firstHalf.map((spell, idx) => {
                 const isDetailed = isSpellDetailed(spell);
                 const spellIndex = isDetailed ? detailedSpells.findIndex(s => s.id === spell.id) : -1;
+                const isHovered = hoveredSpell === spell.id || (focusedSpellIndex === spellIndex && spellIndex >= 0);
                 
                 return (
                   <Spell
                     key={`${level}-1-${idx}`}
-                    ref={(el) => {
-                      if (el && spellIndex >= 0) {
-                        spellRefs.current[spellIndex] = el;
-                      }
-                    }}
+                    ref={setSpellRef(spellIndex)}
                     spell={spell}
                     highlighted={isSpellHighlighted(spell)}
                     detailed={isDetailed}
+                    hovered={isHovered}
+                    onTooltipClick={isDetailed ? handleTooltipClick : undefined}
+                    onMouseEnter={() => handleSpellMouseEnter(spell.id)}
+                    onMouseLeave={handleSpellMouseLeave}
                   />
                 );
               })}
@@ -146,18 +116,19 @@ export function SpellDiagram({
               {secondHalf.map((spell, idx) => {
                 const isDetailed = isSpellDetailed(spell);
                 const spellIndex = isDetailed ? detailedSpells.findIndex(s => s.id === spell.id) : -1;
+                const isHovered = hoveredSpell === spell.id || (focusedSpellIndex === spellIndex && spellIndex >= 0);
                 
                 return (
                   <Spell
                     key={`${level}-2-${idx}`}
-                    ref={(el) => {
-                      if (el && spellIndex >= 0) {
-                        spellRefs.current[spellIndex] = el;
-                      }
-                    }}
+                    ref={setSpellRef(spellIndex)}
                     spell={spell}
                     highlighted={isSpellHighlighted(spell)}
                     detailed={isDetailed}
+                    hovered={isHovered}
+                    onTooltipClick={isDetailed ? handleTooltipClick : undefined}
+                    onMouseEnter={() => handleSpellMouseEnter(spell.id)}
+                    onMouseLeave={handleSpellMouseLeave}
                   />
                 );
               })}
@@ -165,6 +136,14 @@ export function SpellDiagram({
           </div>
         );
       })}
+      
+      {tooltipData && (
+        <SpellTooltip
+          spell={tooltipData.spell}
+          position={tooltipData.position}
+          onClose={handleTooltipClose}
+        />
+      )}
     </div>
   );
 }
