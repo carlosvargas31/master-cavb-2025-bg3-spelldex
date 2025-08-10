@@ -1,6 +1,8 @@
 import c from "classnames";
+import { useState } from "react";
 
 import { Spell } from "./spell";
+import { SpellTooltip } from "./spell-tooltip";
 
 import { useSpellNavigation } from "src/hooks/use-spell-navigation";
 
@@ -23,6 +25,11 @@ export function SpellDiagram({
   selectedClass,
   background,
 }: Props) {
+  const [tooltipData, setTooltipData] = useState<{
+    spell: SpellType;
+    position: { x: number; y: number };
+  } | null>(null);
+  
   const spellsByLevel = groupSpellsByLevel(spells as SpellType[]);
   const status = selectedClass
     ? "selected"
@@ -49,6 +56,14 @@ export function SpellDiagram({
     selectedClass,
     detailedSpells,
   });
+
+  const handleTooltipClick = (spell: SpellType, position: { x: number; y: number }) => {
+    setTooltipData({ spell, position });
+  };
+
+  const handleTooltipClose = () => {
+    setTooltipData(null);
+  };
 
   return (
     <div
@@ -78,6 +93,7 @@ export function SpellDiagram({
                     spell={spell}
                     highlighted={isSpellHighlighted(spell)}
                     detailed={isDetailed}
+                    onTooltipClick={isDetailed ? handleTooltipClick : undefined}
                   />
                 );
               })}
@@ -94,6 +110,7 @@ export function SpellDiagram({
                     spell={spell}
                     highlighted={isSpellHighlighted(spell)}
                     detailed={isDetailed}
+                    onTooltipClick={isDetailed ? handleTooltipClick : undefined}
                   />
                 );
               })}
@@ -101,6 +118,14 @@ export function SpellDiagram({
           </div>
         );
       })}
+      
+      {tooltipData && (
+        <SpellTooltip
+          spell={tooltipData.spell}
+          position={tooltipData.position}
+          onClose={handleTooltipClose}
+        />
+      )}
     </div>
   );
 }
