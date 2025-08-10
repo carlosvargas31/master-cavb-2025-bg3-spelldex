@@ -38,6 +38,18 @@
   letter-spacing: 0.5px;
 }
 
+.damageIcons {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.damageIcon {
+  font-size: 16px;
+  line-height: 1;
+  display: inline-block;
+}
+
 .closeButton {
   position: absolute;
   top: 8px;
